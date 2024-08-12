@@ -64,13 +64,13 @@ module.exports = {
     async addFriend(req, res) {
         try {
             const user = await User.findOne({ _id: req.params.userId });
-            if (!user) return res.status(404).send("Cannot find user with given id");
+            if (!user) return res.status(404).json({message: "Cannot find user with given id"});
 
             const friend = await User.findById(req.params.friendId);
-            if (!friend) return res.status(404).send("Cannot find a friend with given id");
+            if (!friend) return res.status(404).json({message: "Cannot find a friend with given id"});
 
             const isFriendExist = user.friends.some(friend => friend._id.toString() === req.params.friendId);
-            if (isFriendExist) return res.status(409).send("You already made friend with this user");
+            if (isFriendExist) return res.status(409).json({message: "You already made friend with this user"});
 
             const updateUser = await User.findOneAndUpdate(
                 { _id: req.params.userId },
@@ -92,13 +92,13 @@ module.exports = {
     async unfriend(req, res) {
         try {
             const user = await User.findOne({ _id: req.params.userId });
-            if (!user) return res.status(404).send("Cannot find user with given id");
+            if (!user) return res.status(404).json({message: "Cannot find user with given id"});
 
             const friend = await User.findById(req.params.friendId);
-            if (!friend) return res.status(404).send("Cannot find a friend with given id");
+            if (!friend) return res.status(404).json({message: "Cannot find a friend with given id"});
 
             const isFriendExist = user.friends.some(friend => friend._id.toString() === req.params.friendId);
-            if (!isFriendExist) return res.status(404).send("This user is not your friend yet");
+            if (!isFriendExist) return res.status(404).json({message: "This user is not your friend yet"});
 
             const updateUser = await User.findOneAndUpdate(
                 { _id: user._id },
