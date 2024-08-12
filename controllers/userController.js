@@ -38,14 +38,6 @@ module.exports = {
                 { new: true, runValidators: true }).select("-__v");
             if (!user) return res.status(404).json({ message: "Cannot find user with given id" });
 
-            if (user.username) {
-                await Thought.deleteMany({ _id: { $in: user.thoughts } });
-                await User.updateMany(
-                    { friends: user._id },
-                    { $pull: { friends: user._id } }
-                );
-            }
-
             res.status(200).json({ user, message: "Update user success" });
         } catch (error) {
             console.error("Error occurs while updating user\n", error);
@@ -58,6 +50,10 @@ module.exports = {
             if (!user) return res.status(404).json({ message: "Cannot find user with given id" });
 
             await Thought.deleteMany({ username: user.username });
+            await User.updateMany(
+                {friends: req.params.userId},
+                {$pull: {friends: req.params.userId}}
+            )
 
             res.status(200).json({ user, message: "Update user success" });
         } catch (error) {
