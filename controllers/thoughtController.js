@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { Thought, User } = require("../models/");
 
 module.exports = {
@@ -23,14 +24,13 @@ module.exports = {
     },
     async createThought(req, res) {
         try {
-            const user = await User.findOne({username: req.body.username});
+            const user = await User.findOne({ username: req.body.username });
             if (!user) return res.status(404).send("Cannot find user with given username");
-            
+
             const thought = await Thought.create(req.body);
             await User.updateOne(
                 { username: thought.username },
-                { $push: { thoughts: thought._id } },
-                { new: true }
+                { $push: { thoughts: thought._id } }
             );
 
             res.status(200).json({ thought, message: "Add new thought success" });
@@ -73,6 +73,9 @@ module.exports = {
     },
     async addReaction(req, res) {
         try {
+            // const user = await User.findOne({ username: req.body.username });
+            // if (!user) return res.status(404).send("Cannot find user with given username");
+
             const thought = await Thought.findOneAndUpdate(
                 { _id: req.params.thoughtId },
                 {
@@ -96,18 +99,23 @@ module.exports = {
     },
     async deleteReaction(req, res) {
         try {
-            const thought = await Thought.findOne({_id: req.params.thoughtId});
+            if (!mongoose.Types.ObjectId.isValid(req.params.thoughtId)) return res.status(400).send("Thought ID is invalid");
+
+            if (!mongoose.Types.ObjectId.isValid(req.params.reactionId)) return res.status(400).send("Reaction ID is invalid");
+
+            const thought = await Thought.findOne({ _id: req.params.thoughtId });
             if (!thought) return res.status(404).send("Cannot find a thought with given id");
-            
+
             const reaction = thought.reactions.find(reaction => reaction.reactionId.toString() === req.params.reactionId);
-            if(!reaction) return res.status(404).send("Cannot find a reaction with given id");
-            
-            await thought.updateOne(
+            if (!reaction) return res.status(404).send("Cannot find a reaction with given id");
+
+            const updateThought = await Thought.findOneAndUpdate(
+                { _id: req.params.thoughtId },
                 { $pull: { reactions: { reactionId: req.params.reactionId } } },
                 { new: true }
-            );
+            ).select("-__v");
 
-            res.status(200).json({ thought, message: "Remove reaction success" });
+            res.status(200).json({ updateThought, message: "Remove reaction success" });
         } catch (error) {
             console.error("ERROR occurs while removing reaction\n", error);
             res.status(500).send("Internal error");
