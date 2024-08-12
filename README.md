@@ -12,15 +12,15 @@ This project is a social media application that allows users to interact with ea
 * [Contact](#contact)
 
 ## Features
-* User Management: Create, update, and delete users. Add and remove friends.
-* Thought Management: Create, update, and delete thoughts. Add and remove reactions to thoughts.
-* Reaction Management: Add and delete reactions to thoughts.
+* **User Management:** Create, update, and delete users. Add and remove friends.
+* **Thought Management:** Create, update, and delete thoughts. Add and remove reactions to thoughts.
+* **Reaction Management:** Add and delete reactions to thoughts.
 
 ## Technologies Used
-* Node.js: JavaScript runtime for building server-side applications.
-* Express.js: Web framework for Node.js.
-* MongoDB: NoSQL database used for storing user and thought data.
-* Mongoose: ODM (Object Data Modeling) library for MongoDB and Node.js.
+* **Node.js:** JavaScript runtime for building server-side applications.
+* **Express.js:** Web framework for Node.js.
+* **MongoDB:** NoSQL database used for storing user and thought data.
+* **Mongoose:** ODM (Object Data Modeling) library for MongoDB and Node.js.
 
 ## API Endpoints
 ### User Endpoints
