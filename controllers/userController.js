@@ -82,6 +82,11 @@ module.exports = {
                 { new: true }
             ).select("-__v").populate("friends");
 
+            await User.updateOne(
+                {_id: friend._id},
+                {$addToSet: {friends: req.params.userId}},
+            )
+
             res.status(200).json({ updateUser, message: "Add new friend success" });
         } catch (error) {
             console.error("Error occurs while adding new friend\n", error);
@@ -93,6 +98,9 @@ module.exports = {
             const user = await User.findOne({ _id: req.params.userId });
             if (!user) return res.status(404).send("Cannot find user with given id");
 
+            const friend = await User.findById(req.params.friendId);
+            if(!friend) return res.status(404).send("Cannot find a friend with given id");
+
             const isFriendExist = user.friends.some(friend => friend._id.toString() === req.params.friendId);
             if (!isFriendExist) return res.status(404).send("This user is not your friend yet");
 
@@ -101,6 +109,11 @@ module.exports = {
                 { $pull: { friends: req.params.friendId } },
                 { new: true }
             ).select("-__v").populate("friends");
+
+            await User.updateOne(
+                {_id: friend._id},
+                {$pull: {friends: req.params.userId}}
+            )
 
             res.status(200).json({ updateUser, message: "Remove friend success" });
         } catch (error) {
