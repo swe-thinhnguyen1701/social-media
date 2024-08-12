@@ -1,5 +1,4 @@
-const Thought = require("../models/Thought");
-const User = require("../models/User")
+const { Thought, User } = require("../models/");
 
 module.exports = {
     async getThoughts(req, res) {
@@ -26,7 +25,7 @@ module.exports = {
         try {
             const thought = await Thought.create(req.body);
             const user = await User.findOneAndUpdate(
-                { _id: req.body.userId },
+                { username: thought.username },
                 { $push: { thoughts: thought._id } },
                 { new: true }
             );
@@ -75,7 +74,14 @@ module.exports = {
         try {
             const thought = await Thought.findOneAndUpdate(
                 { _id: req.params.thoughtId },
-                { $addToSet: { reactions: req.body } },
+                {
+                    $addToSet: {
+                        reactions: {
+                            reactionBody: req.body.reactionBody,
+                            username: req.body.username
+                        }
+                    }
+                },
                 { new: true, runValidators: true }
             ).select("-__v");
 
@@ -89,16 +95,19 @@ module.exports = {
     },
     async deleteReaction(req, res) {
         try {
-            const thought = await Thought.findOneAndUpdate(
-                { _id: req.params.thoughtId },
-                { $pull: { reactions: req.params.reactionId } },
+            const thought = await Thought.findOne({_id: req.params.thoughtId});
+            if (!thought) return res.status(404).send("Cannot find a thought with given id");
+            
+            const reaction = thought.reactions.find(reaction => reaction.reactionId.toString() === req.params.reactionId);
+            if(!reaction) return res.status(404).send("Cannot find a reaction with given id");
+            
+            await thought.updateOne(
+                { $pull: { reactions: { reactionId: req.params.reactionId } } },
                 { new: true }
             );
 
-            if (!thought) return res.status(404).send("Cannot find a thought with given id");
-
             res.status(200).json({ thought, message: "Remove reaction success" });
-        }catch(error) {
+        } catch (error) {
             console.error("ERROR occurs while removing reaction\n", error);
             res.status(500).send("Internal error");
         }
