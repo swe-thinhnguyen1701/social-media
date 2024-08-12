@@ -1,6 +1,4 @@
-const User = require("../models/User");
-const Thought = require("../models/Thought");
-const { use } = require("../routes/api");
+const { Thought, User } = require("../models/");
 
 module.exports = {
     async getUsers(req, res) {
@@ -40,7 +38,13 @@ module.exports = {
                 { new: true, runValidators: true }).select("-__v");
             if (!user) return res.status(404).json({ message: "Cannot find user with given id" });
 
-            await Thought.deleteMany({ _id: { $in: user.thoughts } });
+            if (user.username) {
+                await Thought.deleteMany({ _id: { $in: user.thoughts } });
+                await User.updateMany(
+                    { friends: user._id },
+                    { $pull: { friends: user._id } }
+                );
+            }
 
             res.status(200).json({ user, message: "Update user success" });
         } catch (error) {
@@ -50,8 +54,10 @@ module.exports = {
     },
     async deleteUser(req, res) {
         try {
-            const user = await User.findOneAndDelete({ _id: req.params.userId });
+            const user = await User.findByIdAndDelete(req.params.userId);
             if (!user) return res.status(404).json({ message: "Cannot find user with given id" });
+
+            await Thought.deleteMany({ username: user.username });
 
             res.status(200).json({ user, message: "Update user success" });
         } catch (error) {
@@ -61,7 +67,13 @@ module.exports = {
     },
     async addFriend(req, res) {
         try {
-            const user = await User.findOneAndUpdate(
+            const user = await User.findOne({ _id: req.params.userId });
+            if (!user) return res.status(404).send("Cannot find user with given id");
+
+            const isFriendExist = user.friends.some(friend => friend._id.toString() === req.params.friendId);
+            if (!isFriendExist) return res.status(409).send("You already made friend with this user");
+
+            const updateUser = await User.findOneAndUpdate(
                 { _id: req.params.userId },
                 { $addToSet: { friends: req.params.friendId } },
                 { new: true }
@@ -69,7 +81,7 @@ module.exports = {
 
             if (!user) return res.status(404).send("Cannot find user with given id");
 
-            res.status(200).json({ user, message: "Add new friend success" });
+            res.status(200).json({ updateUser, message: "Add new friend success" });
         } catch (error) {
             console.error("Error occurs while adding new friend\n", error);
             res.status(500).json({ message: "Internal error" });
@@ -77,15 +89,19 @@ module.exports = {
     },
     async unfriend(req, res) {
         try {
-            const user = await User.findOneAndUpdate(
-                { _id: req.params.userId },
+            const user = await User.findOne({ _id: req.params.userId });
+            if (!user) return res.status(404).send("Cannot find user with given id");
+
+            const isFriendExist = user.friends.some(friend => friend._id.toString() === req.params.friendId);
+            if (!isFriendExist) return res.status(404).send("This user is not your friend yet");
+
+            const updateUser = await User.findOneAndUpdate(
+                { _id: user._id },
                 { $pull: { friends: req.params.friendId } },
                 { new: true }
             ).select("-__v").populate("friends");
 
-            if (!user) return res.status(404).send("Cannot find user with given id");
-
-            res.status(200).json({ user, message: "Remove friend success" });
+            res.status(200).json({ updateUser, message: "Remove friend success" });
         } catch (error) {
             console.error("Error occurs while removing friend\n", error);
             res.status(500).json({ message: "Internal error" });
