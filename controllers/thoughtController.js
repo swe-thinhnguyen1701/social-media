@@ -23,14 +23,15 @@ module.exports = {
     },
     async createThought(req, res) {
         try {
+            const user = await User.findOne({username: req.body.username});
+            if (!user) return res.status(404).send("Cannot find user with given username");
+            
             const thought = await Thought.create(req.body);
-            const user = await User.findOneAndUpdate(
+            await User.updateOne(
                 { username: thought.username },
                 { $push: { thoughts: thought._id } },
                 { new: true }
             );
-
-            if (!user) return res.status(404).send("Cannot find user with given id");
 
             res.status(200).json({ thought, message: "Add new thought success" });
         } catch (error) {
